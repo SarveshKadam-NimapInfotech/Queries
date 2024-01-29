@@ -2,6 +2,7 @@
 using System.Data.Entity.ModelConfiguration.Configuration;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Threading;
 using System.Xml.Linq;
 
 namespace Queries
@@ -170,7 +171,6 @@ namespace Queries
             context.Authors.GroupJoin(context.Courses, a => a.Id, c => c.AuthorId, (author, course) => new { Author = author, Courses = course.Count() });
 
             //cross Join
-
             context.Authors.SelectMany(a => context.Courses, (author, course) => new
             {
                 AuthorName = author.Name,
@@ -178,6 +178,37 @@ namespace Queries
             });
 
 
+            //Partitioning
+            //This is usefull when you want to return a page of records, imagine you want to display courses in pages and size of each page is 10.
+            var courses4 = context.Courses.Skip(10).Take(10);
+
+            //Element Operators
+            context.Courses.OrderBy(c => c.Level).First();
+            context.Courses.OrderBy(c => c.Level).FirstOrDefault();
+            context.Courses.OrderBy(c => c.Level).Last();
+            context.Courses.OrderBy(c => c.Level).LastOrDefault();
+
+
+            //Quantifying
+            var allAbove10Dollars = context.Courses.All(c => c.FullPrice > 10);
+            context.Courses.Any(c => c.Level == 1); // Do we have any courses in level 1
+
+            //Aggregating
+            var count = context.Courses.Count();
+            context.Courses.Where(c => c.Level == 1).Count();
+            context.Courses.Max(c => c.FullPrice);
+            context.Courses.Min(c => c.FullPrice);
+            context.Courses.Average(c => c.FullPrice);
+
+
+            //Deferred Excecution
+            var courses5 = context.Courses.Where(c => c.IsBeginnerCourse == true);
+            // now this code will throw an exception because we are using custom property and
+            // to use such properties we first have to load the database objects into the query it can be done by tolist.
+            context.Courses.ToList().Where(c => c.IsBeginnerCourse == true); // now this code will work
+
+            foreach (var c in courses5)
+                Console.WriteLine(c.Name);
 
 
 
